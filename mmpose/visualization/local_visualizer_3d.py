@@ -291,8 +291,18 @@ class Pose3dLocalVisualizer(PoseLocalVisualizer):
         fig.tight_layout()
         fig.canvas.draw()
 
-        pred_img_data = np.frombuffer(
-            fig.canvas.tostring_rgb(), dtype=np.uint8)
+            # 把 Figure 轉成 numpy
+        if hasattr(fig.canvas, "tostring_rgb"):
+            pred_img_data = np.frombuffer(
+                fig.canvas.tostring_rgb(), dtype=np.uint8)
+        else:
+            # TkAgg 只有 tostring_argb
+            pred_img_data = np.frombuffer(
+                fig.canvas.tostring_argb(), dtype=np.uint8)
+
+            # 先 reshape 成 (H, W, 4)，ARGB → RGB
+            pred_img_data = pred_img_data.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+            pred_img_data = pred_img_data[..., 1:]  # 去掉 A 
 
         if not pred_img_data.any():
             pred_img_data = np.full((vis_height, vis_width, 3), 255)
